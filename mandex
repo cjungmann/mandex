@@ -1,0 +1,167 @@
+#!/usr/bin/env bash
+
+clear_to_top() { echo -n "[2J"; }
+move_to_line() { echo -n "[$1;0H"; }
+clear_line()   { echo -n "[K"; }
+recho()        { echo "[1;31m$1[m"; }
+gecho()        { echo "[1;32m$1[m"; }
+becho()        { echo "[1;34m$1[m"; }
+embolden()     { echo -n "[1;34m"; }
+unset_color()  { echo -n "[m"; }
+
+pause_for_key(){ read -n 1 -p "${1:=Press any key to contine.}"; }
+
+get_keypress()
+{
+    local prompt="${1:=Press any key}"
+
+    # Array to collect chars in case of multi-char keypress
+    local -a chars=( )
+    
+    # Wait for a keypress (-n 1), save to array
+    local keychar
+    read -n 1 -s -p "${prompt}" keychar
+    chars=( "${chars[@]}" "$keychar" )
+
+    # Collect additional characters if available:
+    while read -t 0; do
+        read -n 1 keychar
+        chars=( "${chars[@]}" "$keychar" )
+    done
+
+    # # Unescape escape character
+    # if [ "${echars[0]}" = '' ]; then
+    #     echars[0]='^['
+    # fi
+
+    # empty IFS so array is joined without delimiters
+    local IFS=''
+    echo "${chars[*]}"
+}
+
+
+declare  KS_Down='[B'
+declare    KS_Up='[A'
+declare  KS_Left='[D'
+declare KS_Right='[C'
+declare   Ctrl_n=$'\cn'
+declare   Ctrl_p=$'\cp'
+
+open_inscreen()
+{
+    local SAVED_LESS="$LESS"
+    export LESS=+/^"$1"
+    man "${target}"
+    export LESS="${SAVED_LESS}"
+}
+
+get_array_maxlen()
+{
+    local -i curlen maxlen=0
+    local line
+    for line in "$@"; do
+        curlen="${#line}"
+        if [ "$curlen" -gt "$maxlen" ]; then
+            maxlen="$curlen"
+        fi
+    done
+
+    echo $maxlen
+    return 0
+}
+
+select_from_array()
+{
+    local -i lines="$1"; shift
+    local -a sections=( "$@" )
+
+    local -i index=0
+    local -i top=0
+    local -i quit_loop=0
+    local -i limit="${#sections[@]}"
+
+    local -i counter
+    local line keypr
+
+    local -i maxlen=$( get_array_maxlen "${sections[@]}" )
+
+    select_up()  { if [ "$index" -gt 0 ];        then (( --index )); fi; }
+    select_down(){ if [ "$index" -lt "$(( limit-1 ))" ]; then (( ++index )); fi; }
+    open_selection() { clear_line; open_inscreen "${sections[$index]}"; }
+
+    while [ "$quit_loop" -eq 0 ]; do
+
+        move_to_line 3
+
+        counter=0
+        for line in "${sections[@]}"; do
+            if [ $counter -ge $top ]; then
+                clear_line
+                if [ $counter -eq $index ]; then
+                    embolden
+                fi
+                echo "  $line"
+                if [ $counter -eq $index ]; then
+                    unset_color
+                fi
+            fi
+            (( ++counter ))
+        done
+
+        keypr=$( get_keypress "Arrows to move, ENTER to select, 'q' to exit." )
+
+        case $keypr in
+            "")                   open_selection ;;
+            "q")                  quit_loop=1    ;;
+            "$Ctrl_n" | $KS_Down) select_down    ;;
+            "$Ctrl_p" | $KS_Up)   select_up      ;;
+
+            # *) echo >&2; clear_line >&2; echo "Ya pressed [1;32m$keypr[m (${#keypr})" >&2 ;;
+        esac
+    done
+    echo
+}
+
+
+
+process_sections()
+{
+    local title="$1"; shift
+
+    local -i ndx=0
+    local line
+    local -a names
+    local -a ranges
+    local line_before=
+
+    # Parse parameters into paired arrays:
+    for line in "$@"; do
+        if [ -n "$line_before" ]; then
+            names+=( "${line_before#*:}" )
+            ranges+=( "${line_before%%:*}:${line%%:*}" )
+        fi
+        line_before="$line"
+    done
+
+    clear_to_top
+
+    move_to_line 0
+    becho "$title"
+
+    select_from_array 10 "${names[@]}"
+}
+
+
+##########################
+# Execution begins here: #
+##########################
+
+declare target="${1:-bash}"
+declare mantext=$( man "$1" )
+
+IFS=$'\n'
+declare -a tops=( $( echo "${mantext}" | grep -b ^[[:alnum:]] - ) )
+declare -a Sections=( "${tops[@]:1:$(( ${#tops[@]} - 1))}" )
+
+process_sections "$1 man index" "${Sections[@]}"
+

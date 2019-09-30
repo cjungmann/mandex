@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+f_uninstall()
+{
+    if [ -e /usr/local/bin/mandex ]; then
+        rm /usr/local/bin/mandex;
+    fi
+}
+
+f_install()
+{
+    if ! [ -e /usr/local/bin/mandex ]; then
+        cp mandex /usr/local/bin/mandex
+    fi
+}
+
+show_usage()
+{
+    echo
+    echo "sudo ./install [uninstall]"
+    echo
+    echo "Call the install function as root."
+    echo
+    echo "Called with no parameters, 'install' installs 'mandex' in"
+    echo "/usr/local/bin."
+    echo
+    echo "With a single parameter 'uninstall' install removes the utility."
+}
+
+
+if [ -z "${SUDO_USER}" ]; then
+    echo "Must be root to run install."
+elif [ "$#" -eq 0 ]; then
+    f_install
+elif [ "$1" = "uninstall" ]; then
+   f_uninstall
+else
+    show_usage
+fi
