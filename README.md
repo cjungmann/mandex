@@ -1,32 +1,32 @@
 # Project mandex (man index)
 
-The small script reads the text of a *man* file to
-collect the section names, presenting the names in
-a scrolling list from which a user can select and be
-brought to that section of the man file.
+As I increasingly depend on *man* files as references and
+learning resources, there are times when I waste a lot of
+time on unsuccessful searches, particularly for large *man* 
+files like *bash*, *xterm*, *wget*, etc.
 
-## Man Details
+This small script reads the text of a *man* file to collect
+the sections names, presenting the section names in a list,
+with one of the sections highlighted.
 
-**man** opens a man file and sends the contents to a
-pager program.  By default on most systems, the pager
-is **less**.
+The user can change the highlighted section name using the
+up or down arrow keys, or with Ctrl-N and Ctrl-P for the
+next and previous lines, respectively.  Pressing ENTER on
+a section name will launch **man** at the indicated section
+name.
 
-For this project, the **less** feature I am interested in
-is how to position the output at a specific position in
-the file.
+The first version offers only first-level indexing.  First-level
+indexing is not always helpful (see the **gcc** man page),
+so second-level indexing is on the way.
 
-There are at least two ways to do this, but the best of the
-two is to set an environment variable, *LESS* to a search
-string before calling **man**.  For example, to open the
-**bash** man page at *Parameter Expansion*, issue the following
-at the command line:
+## Revelations
 
-~~~sh
-LESS=+/Parameter\ Expansion man bash
-~~~
+As usual, part of my motivation for developing a tool is for
+the exploration of obscure (to me) details of the Linux OS.
 
-I recommend looking at the **less** man page to find other
-features that you can exploit.
+With this project I hope to begin a habit of creating a 
+supplemental page with my questions and discoveries, to leave
+bread crumb trails of knowledge I can find later exploit to
+recall successes and revisit useful web resources.
 
-I hope this **mandex** utility will help make the study of
-man pages easier.
+[README_learning.md](README_learning.md)
