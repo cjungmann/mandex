@@ -32,6 +32,8 @@ if [ -z "${SUDO_USER}" ]; then
     echo "Must be root to run install."
 elif [ "$#" -eq 0 ]; then
     f_install
+elif [ "$1" = "update" ]; then
+    cp mandex /usr/local/bin/mandex
 elif [ "$1" = "uninstall" ]; then
    f_uninstall
 else
